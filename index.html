@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collection Registry App</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen pb-24 md:pb-6 transition-colors duration-200">
+
+    <header class="sticky top-0 z-30 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 px-4 py-3">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+                    <i class="fa-solid fa-graduation-cap text-lg"></i>
+                </div>
+                <div>
+                    <h1 id="headerInstName" class="font-bold text-lg leading-tight tracking-tight text-slate-900 dark:text-white">Collection Registry</h1>
+                    <p id="headerUserName" class="text-xs text-slate-500 dark:text-slate-400 font-medium">Fee & Income Management</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="syncToGoogleSheets()" title="Sync to Google Sheet" class="p-2.5 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 hover:bg-emerald-100 rounded-xl transition-colors flex items-center space-x-1.5 text-xs font-bold">
+                    <i class="fa-solid fa-file-excel text-sm"></i>
+                    <span class="hidden sm:inline">Sync Sheets</span>
+                </button>
+                <button onclick="openSettingsModal()" title="Institution & Data Settings" class="p-2.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
+                    <i class="fa-solid fa-gear text-lg"></i>
+                </button>
+                <button onclick="toggleDarkMode()" title="Toggle Theme" class="p-2.5 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
+                    <i id="themeIcon" class="fa-solid fa-moon text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 pt-4 pb-6 space-y-6">
+
+        <!-- DASHBOARD VIEW -->
+        <section id="view-dashboard" class="space-y-6">
+            
+            <!-- Summary Banner -->
+            <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-600 via-brand-700 to-purple-800 text-white p-6 shadow-xl shadow-brand-500/15">
+                <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs uppercase tracking-wider font-semibold text-brand-100/80">TOTAL COLLECTION POOL</span>
+                        <div class="w-8 h-8 rounded-lg bg-white/10 backdrop-blur-md flex items-center justify-center text-white">
+                            <i class="fa-solid fa-wallet text-sm"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-baseline space-x-2">
+                        <span class="text-3xl font-extrabold" id="dashTotalPool">₹0</span>
+                    </div>
+                    <p class="text-xs text-brand-200 mt-1" id="dashTotalEntriesCount">0 Total Entries Recorded</p>
+
+                    <div class="grid grid-cols-3 gap-2 mt-6 pt-4 border-t border-white/10 text-center sm:text-left">
+                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-2.5">
+                            <span class="block text-[10px] uppercase font-bold text-brand-200 tracking-wider">CASH</span>
+                            <span class="text-sm font-bold text-white" id="dashCashTotal">₹0</span>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-2.5">
+                            <span class="block text-[10px] uppercase font-bold text-brand-200 tracking-wider">ONLINE</span>
+                            <span class="text-sm font-bold text-white" id="dashOnlineTotal">₹0</span>
+                        </div>
+                        <div class="bg-white/10 backdrop-blur-sm rounded-xl p-2.5">
+                            <span class="block text-[10px] uppercase font-bold text-amber-200 tracking-wider">NOT PAID</span>
+                            <span class="text-sm font-bold text-amber-100" id="dashNotPaidTotal">₹0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-3 gap-3">
+                <button onclick="switchTab('add-entry')" class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all text-left flex items-center space-x-3 group">
+                    <div class="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center text-base group-hover:scale-105 transition-transform shrink-0">
+                        <i class="fa-solid fa-plus"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="font-bold text-slate-800 dark:text-white text-xs truncate">Add Entry</h3>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">Record fee</p>
+                    </div>
+                </button>
+
+                <button onclick="switchTab('students')" class="p-3.5 bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/60 shadow-sm hover:shadow-md transition-all text-left flex items-center space-x-3 group">
+                    <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center text-base group-hover:scale-105 transition-transform shrink-0">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="font-bold text-slate-800 dark:text-white text-xs truncate">Students</h3>
+                        <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">Directory</p>
+                    </div>
+                </button>
+
+                <button onclick="syncToGoogleSheets()" class="p-3.5 bg-emerald-50 dark:bg-emerald-900/30 rounded-2xl border border-emerald-100 dark:border-emerald-800/40 shadow-sm hover:shadow-md transition-all text-left flex items-center space-x-3 group">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-base group-hover:scale-105 transition-transform shrink-0">
+                        <i class="fa-solid fa-table"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="font-bold text-emerald-900 dark:text-emerald-100 text-xs truncate">Google Sheet</h3>
+                        <p class="text-[10px] text-emerald-600 dark:text-emerald-400 truncate">Send data</p>
+                    </div>
+                </button>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-100 dark:border-slate-700/60 shadow-sm space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="font-bold text-slate-900 dark:text-white">Collection by Category</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Summary broken down with Cash, Online & Not Paid</p>
+                    </div>
+                    <span class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </span>
+                </div>
+
+                <div class="relative h-52 w-full flex items-center justify-center">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+
+                <div id="dashCategoryBreakdownList" class="space-y-3 pt-2 divide-y divide-slate-100 dark:divide-slate-700/50">
+                    <!-- Dynamic categories detailed breakdown inserted here -->
+                </div>
+            </div>
+
+            <!-- Recent activity section -->
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-100 dark:border-slate-700/60 shadow-sm space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="font-bold text-slate-900 dark:text-white">Recent Entries</h2>
+                    <button onclick="switchTab('registry')" class="text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400">View All</button>
+                </div>
+                <div id="dashRecentEntries" class="space-y-2">
+                    <!-- Dynamic recent transactions -->
+                </div>
+            </div>
+        </section>
+
+        <section id="view-add-entry" class="hidden space-y-6">
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-6 border border-slate-100 dark:border-slate-700/60 shadow-sm">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-lg text-slate-900 dark:text-white" id="entryFormHeading">New Collection Entry</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Record payment or set pending fee</p>
+                    </div>
+                </div>
+
+                <form id="addEntryForm" onsubmit="handleSaveEntry(event)" class="space-y-4 relative">
+                    <input type="hidden" id="entryEditId">
+                    <input type="hidden" id="entryStudentId" required>
+                    
+                    <!-- Class / Division Dropdown Filter -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">Class / Division</label>
+                        <select id="entryClassSelect" onchange="filterStudentSuggestions()" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                            <option value="">All Classes / Select Class...</option>
+                        </select>
+                    </div>
+
+                    <!-- Admission Number Input with Search Dropdown -->
+                    <div class="relative">
+                        <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">Admission Number *</label>
+                        <input type="text" id="entryAdmNo" placeholder="Type admission no..." autocomplete="off" oninput="searchStudents('admNo')" onfocus="searchStudents('admNo')" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                    </div>
+
+                    <!-- Student Name Input with Search Dropdown -->
+                    <div class="relative">
+                        <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">Student Name *</label>
+                        <input type="text" id="entryStudentName" placeholder="Student full name..." autocomplete="off" oninput="searchStudents('name')" onfocus="searchStudents('name')" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                        
+                        <!-- Search Suggestions Dropdown Box -->
+                        <div id="studentSearchResults" class="hidden absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700/60">
+                        </div>
+                    </div>
+
+                    <!-- Category Selection -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">Category *</label>
+                        <select id="entryCategoryId" required onchange="handleCategorySelectChange()" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                            <option value="">-- Select Category --</option>
+                        </select>
+                    </div>
+
+                    <!-- Payment Method -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">Payment Method *</label>
+                        <select id="entryPaymentMethod" required class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                            <option value="Cash">Cash</option>
+                            <option value="Online">Online</option>
+                            <option value="Not Paid">Not Paid</option>
+                        </select>
+                    </div>
+
+                    <!-- Amount -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">Amount (₹) *</label>
+                        <input type="number" id="entryAmount" required min="1" placeholder="₹ 0.00" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                    </div>
+
+                    <!-- Date -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">Date *</label>
+                        <input type="date" id="entryDate" required class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                    </div>
+
+                    <!-- Remarks / Notes -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1.5">Notes / Remarks (Optional)</label>
+                        <input type="text" id="entryNotes" placeholder="Transaction ref or note..." class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500 text-sm">
+                    </div>
+
+                    <div class="pt-2 flex gap-3">
+                        <button type="button" onclick="cancelEntryEdit()" class="w-1/3 py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-sm">Cancel</button>
+                        <button type="submit" class="w-2/3 py-3 rounded-xl bg-gradient-to-r from-brand-600 to-indigo-600 text-white font-bold shadow-md shadow-brand-500/20 hover:opacity-95 transition-opacity text-sm"><i class="fa-solid fa-check mr-1.5"></i> Save Entry</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section id="view-students" class="hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 class="font-bold text-xl text-slate-900 dark:text-white">Student Directory</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Manage individual students & bulk imports</p>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button onclick="openBulkStudentModal()" class="px-3.5 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white font-semibold text-xs flex items-center space-x-1.5 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">
+                        <i class="fa-solid fa-file-csv"></i>
+                        <span>Bulk Add</span>
+                    </button>
+                    <button onclick="openAddStudentModal()" class="px-3.5 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-xs flex items-center space-x-1.5 shadow-md shadow-brand-500/20 hover:bg-brand-700 transition-colors">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Add Student</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+                <input type="text" id="searchStudentInput" oninput="renderStudentsList()" placeholder="Search student name, adm no, class..." class="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700/60 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 dark:bg-slate-900/60 text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-100 dark:border-slate-700/60">
+                            <tr>
+                                <th class="py-3 px-4">Student</th>
+                                <th class="py-3 px-4">Adm No / Class</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="studentsTableBody" class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                            <!-- Dynamic student rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-categories" class="hidden space-y-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="font-bold text-xl text-slate-900 dark:text-white">Fee Categories</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Add, edit and manage category types</p>
+                </div>
+                <button onclick="openCategoryModal()" class="px-3.5 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-xs flex items-center space-x-1.5 shadow-md shadow-brand-500/20 hover:bg-brand-700 transition-colors">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>New Category</span>
+                </button>
+            </div>
+
+            <div id="categoriesGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Dynamic categories cards -->
+            </div>
+        </section>
+
+        <section id="view-registry" class="hidden space-y-6">
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-100 dark:border-slate-700/60 shadow-sm space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h2 class="font-bold text-xl text-slate-900 dark:text-white">Collection Registry</h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Filter transactions & export reports</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="exportToCSV()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 transition-all shadow-md shadow-emerald-600/20">
+                            <i class="fa-solid fa-file-csv text-sm"></i>
+                            <span>CSV for Sheets</span>
+                        </button>
+                        <button onclick="exportToPDF()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-600/20 flex items-center space-x-1.5 transition-all">
+                            <i class="fa-solid fa-file-pdf text-sm"></i>
+                            <span>PDF Report</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Search & Filters -->
+                <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 pt-2">
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 mb-1">From Date</label>
+                        <input type="date" id="filterFromDate" onchange="renderRegistryList()" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 mb-1">To Date</label>
+                        <input type="date" id="filterToDate" onchange="renderRegistryList()" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 mb-1">Class</label>
+                        <select id="filterClass" onchange="renderRegistryList()" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+                            <option value="ALL">All Classes</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 mb-1">Category</label>
+                        <select id="filterCategory" onchange="renderRegistryList()" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+                            <option value="ALL">All Categories</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 mb-1">Status / Method</label>
+                        <select id="filterStatus" onchange="renderRegistryList()" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium">
+                            <option value="ALL">All Payments</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Online">Online</option>
+                            <option value="Not Paid">Not Paid</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Registry entries list -->
+            <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700/60 shadow-sm overflow-hidden">
+                <div id="registryList" class="divide-y divide-slate-100 dark:divide-slate-700/60">
+                    <!-- Dynamic registry rows -->
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 z-30 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-t border-slate-200 dark:border-slate-700 px-4 py-2">
+        <div class="max-w-md mx-auto flex items-center justify-around text-center">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item flex flex-col items-center py-1 px-3 text-brand-600 font-bold transition-all">
+                <i class="fa-solid fa-chart-pie text-lg mb-0.5"></i>
+                <span class="text-[10px]">Dashboard</span>
+            </button>
+            <button onclick="switchTab('add-entry')" id="nav-add-entry" class="nav-item flex flex-col items-center py-1 px-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">
+                <i class="fa-solid fa-circle-plus text-lg mb-0.5"></i>
+                <span class="text-[10px]">Add Entry</span>
+            </button>
+            <button onclick="switchTab('registry')" id="nav-registry" class="nav-item flex flex-col items-center py-1 px-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">
+                <i class="fa-solid fa-list-check text-lg mb-0.5"></i>
+                <span class="text-[10px]">Registry</span>
+            </button>
+            <button onclick="switchTab('students')" id="nav-students" class="nav-item flex flex-col items-center py-1 px-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">
+                <i class="fa-solid fa-user-group text-lg mb-0.5"></i>
+                <span class="text-[10px]">Students</span>
+            </button>
+            <button onclick="switchTab('categories')" id="nav-categories" class="nav-item flex flex-col items-center py-1 px-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all">
+                <i class="fa-solid fa-layer-group text-lg mb-0.5"></i>
+                <span class="text-[10px]">Categories</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Single Student Add/Edit Modal -->
+    <div id="studentModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 transform transition-all">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white" id="studentModalTitle">Add New Student</h3>
+                <button onclick="closeStudentModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="studentForm" onsubmit="saveStudent(event)" class="space-y-4">
+                <input type="hidden" id="studentEditId">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Student Full Name *</label>
+                    <input type="text" id="studentNameInput" required placeholder="e.g. Rahul Sharma" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Admission No *</label>
+                        <input type="text" id="studentAdmInput" required placeholder="e.g. 1042" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Class / Division *</label>
+                        <input type="text" id="studentClassInput" required placeholder="e.g. Class 10A" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm">
+                    </div>
+                </div>
+                <div class="pt-3 flex gap-2">
+                    <button type="button" onclick="closeStudentModal()" class="w-1/3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-sm">Cancel</button>
+                    <button type="submit" class="w-2/3 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-sm shadow-md shadow-brand-500/20 hover:bg-brand-700">Save Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bulk Student Add Modal -->
+    <div id="bulkStudentModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700">
+            <div class="flex justify-between items-center mb-3">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-file-csv text-purple-600 dark:text-purple-400 text-lg"></i>
+                    <h3 class="font-bold text-lg text-slate-900 dark:text-white">Bulk Add Students</h3>
+                </div>
+                <button onclick="closeBulkStudentModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                Paste student rows line by line in space-separated format: <br>
+                <code class="bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded text-brand-600 dark:text-brand-400">AdmNo Student Name Class Name</code>
+            </p>
+            <textarea id="bulkDataInput" rows="6" placeholder="1005 Anish Kumar Class 10A&#10;1006 Fatima Zahra Class 10B&#10;1007 George V Class 10A" class="w-full px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 mb-4"></textarea>
+            <div class="flex gap-2">
+                <button type="button" onclick="closeBulkStudentModal()" class="w-1/3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-sm">Cancel</button>
+                <button type="button" onclick="processBulkStudents()" class="w-2/3 py-2.5 rounded-xl bg-purple-600 text-white font-semibold text-sm shadow-md shadow-purple-600/20 hover:bg-purple-700">Import Students</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Category Add/Edit Modal -->
+    <div id="categoryModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 transform transition-all">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white" id="categoryModalTitle">Add Fee Category</h3>
+                <button onclick="closeCategoryModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <form id="categoryForm" onsubmit="saveCategory(event)" class="space-y-4">
+                <input type="hidden" id="categoryEditId">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Category Title *</label>
+                    <input type="text" id="categoryNameInput" required placeholder="e.g. Library Deposit" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Default Amount (₹)</label>
+                    <input type="number" id="categoryAmountInput" min="0" placeholder="0" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm">
+                </div>
+                <div class="pt-3 flex gap-2">
+                    <button type="button" onclick="closeCategoryModal()" class="w-1/3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-sm">Cancel</button>
+                    <button type="submit" class="w-2/3 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-sm shadow-md shadow-brand-500/20 hover:bg-brand-700">Save Category</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Institution & Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 transform transition-all space-y-5 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-gear text-brand-600 dark:text-brand-400 text-lg"></i>
+                    <h3 class="font-bold text-lg text-slate-900 dark:text-white">Settings & Integration</h3>
+                </div>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Institution Details Form -->
+            <form id="settingsForm" onsubmit="saveSettings(event)" class="space-y-3 pb-3 border-b border-slate-100 dark:border-slate-700">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">Institution / School Name *</label>
+                    <input type="text" id="instNameInput" required placeholder="e.g. Govt HSS Kochi" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">User / Incharge Name</label>
+                    <input type="text" id="userNameInput" placeholder="e.g. Principal / Accountant Name" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm">
+                </div>
+                
+                <!-- Google Sheet Web App Link Input -->
+                <div>
+                    <label class="block text-xs font-bold uppercase text-emerald-600 dark:text-emerald-400 mb-1">
+                        <i class="fa-solid fa-table mr-1"></i> Google Apps Script Web App URL
+                    </label>
+                    <input type="url" id="googleSheetScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs font-mono">
+                    <p class="text-[10px] text-slate-400 mt-1">
+                        Google Sheets-ലേക്ക് ഡയറക്റ്റ് ഡാറ്റ അയക്കാൻ നിങ്ങളു‌ടെ Apps Script URL കൊടുക്കുക.
+                    </p>
+                </div>
+
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-xs shadow-md shadow-brand-500/20 hover:bg-brand-700">Save Settings</button>
+            </form>
+
+            <!-- Apps Script Helper Guide -->
+            <div class="bg-slate-50 dark:bg-slate-900/60 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700/60 text-xs space-y-2">
+                <div class="flex justify-between items-center">
+                    <span class="font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-code text-emerald-500 mr-1"></i> Google Apps Script Code</span>
+                    <button onclick="copyAppsScriptCode()" class="px-2 py-1 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-[10px] rounded-lg">Copy Code</button>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                    1. Google Sheet ഉണ്ടാക്കി <b>Extensions > Apps Script</b> തുറക്കുക.<br>
+                    2. താഴെ നൽകിയ കോഡ് പേസ്റ്റ് ചെയ്ത് <b>Deploy > New deployment</b> (Web App, Anyone access) ചെയ്ത് URL കോപ്പി ചെയ്യുക.
+                </p>
+            </div>
+
+            <!-- Data Backup & Restore Section -->
+            <div class="space-y-3 pt-2">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Data Backup & Restore</h4>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="exportBackupData()" class="py-2.5 px-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50 font-bold text-xs flex items-center justify-center space-x-1.5 hover:bg-emerald-100">
+                        <i class="fa-solid fa-download"></i>
+                        <span>Export Backup</span>
+                    </button>
+                    
+                    <label class="py-2.5 px-3 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/50 font-bold text-xs flex items-center justify-center space-x-1.5 hover:bg-blue-100 cursor-pointer">
+                        <i class="fa-solid fa-upload"></i>
+                        <span>Import Backup</span>
+                        <input type="file" id="importFileInput" accept=".json" onchange="importBackupData(event)" class="hidden">
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt View Modal -->
+    <div id="receiptModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700">
+            <div id="receiptContent" class="space-y-4 text-slate-800 dark:text-slate-100">
+                <!-- Receipt details populated dynamically -->
+            </div>
+            <div class="mt-6 flex gap-2">
+                <button onclick="closeReceiptModal()" class="w-1/2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs">Close</button>
+                <button onclick="window.print()" class="w-1/2 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-xs flex items-center justify-center space-x-1.5 hover:bg-brand-700">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Print</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Universal Custom Confirmation Modal -->
+    <div id="confirmModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-700 text-center space-y-4">
+            <div class="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white" id="confirmTitle">Confirm Action</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" id="confirmMessage">Are you sure you want to proceed?</p>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button id="confirmCancelBtn" class="w-1/2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs">Cancel</button>
+                <button id="confirmOkBtn" class="w-1/2 py-2.5 rounded-xl bg-rose-600 text-white font-semibold text-xs hover:bg-rose-700">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed top-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-xl border border-slate-700 flex items-center space-x-3 transform -translate-y-20 opacity-0 transition-all duration-300">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMsg" class="text-xs font-semibold">Action completed</span>
+    </div>
+
+    <script>
+        // Seed initial default state
+        let state = {
+            institutionName: 'Govt Model Higher Secondary',
+            userName: 'Admin Incharge',
+            googleSheetUrl: '',
+            students: [
+                { id: 'st-1', name: 'Rahul V', admNo: '1001', className: 'Class 10A' },
+                { id: 'st-2', name: 'Ananya Nair', admNo: '1002', className: 'Class 10A' },
+                { id: 'st-3', name: 'Mohammed Adil', admNo: '1003', className: 'Class 10B' },
+                { id: 'st-4', name: 'Sreya K', admNo: '1004', className: 'Class 10B' }
+            ],
+            categories: [
+                { id: 'cat-1', name: 'Annual Tour Fee', defaultAmount: 500 },
+                { id: 'cat-2', name: 'Exam Fee', defaultAmount: 200 },
+                { id: 'cat-3', name: 'Sports Day Collection', defaultAmount: 100 }
+            ],
+            entries: [
+                { id: 'en-1', studentId: 'st-1', categoryId: 'cat-1', amount: 500, status: 'Cash', date: new Date().toISOString().split('T')[0], notes: 'Paid directly' },
+                { id: 'en-2', studentId: 'st-2', categoryId: 'cat-1', amount: 500, status: 'Online', date: new Date().toISOString().split('T')[0], notes: 'UPI Ref #9832' },
+                { id: 'en-3', studentId: 'st-3', categoryId: 'cat-2', amount: 200, status: 'Not Paid', date: new Date().toISOString().split('T')[0], notes: 'Pending confirmation' }
+            ]
+        };
+
+        let chartInstance = null;
+
+        window.onload = function() {
+            loadFromLocalStorage();
+            
+            // Set current date in forms
+            document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
+            
+            // Set default date filters
+            const now = new Date();
+            const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+            document.getElementById('filterFromDate').value = firstDay;
+            document.getElementById('filterToDate').value = now.toISOString().split('T')[0];
+
+            // Update UI Header
+            updateHeaderDisplay();
+
+            if (!state.institutionName) {
+                setTimeout(() => openSettingsModal(), 400);
+            }
+
+            // Close search dropdown when clicking outside
+            document.addEventListener('click', function(e) {
+                const results = document.getElementById('studentSearchResults');
+                const admInput = document.getElementById('entryAdmNo');
+                const nameInput = document.getElementById('entryStudentName');
+                if (results && !results.contains(e.target) && e.target !== admInput && e.target !== nameInput) {
+                    results.classList.add('hidden');
+                }
+            });
+
+            populateDropdowns();
+            renderDashboard();
+            renderStudentsList();
+            renderCategoriesList();
+            renderRegistryList();
+        };
+
+        function loadFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem('collection_registry_app_data');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && typeof parsed === 'object') {
+                        state = { ...state, ...parsed };
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to load local storage:", e);
+            }
+        }
+
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('collection_registry_app_data', JSON.stringify(state));
+            } catch (e) {
+                console.error("Failed to save to local storage:", e);
+            }
+        }
+
+        function exportBackupData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+            const downloadAnchor = document.createElement('a');
+            const dateStr = new Date().toISOString().split('T')[0];
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `Collection_Registry_Backup_${dateStr}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('Backup file downloaded!', 'success');
+        }
+
+        function importBackupData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedState = JSON.parse(e.target.result);
+                    if (importedState && Array.isArray(importedState.students) && Array.isArray(importedState.entries)) {
+                        state = importedState;
+                        saveToLocalStorage();
+                        updateHeaderDisplay();
+                        populateDropdowns();
+                        renderDashboard();
+                        renderStudentsList();
+                        renderCategoriesList();
+                        renderRegistryList();
+                        closeSettingsModal();
+                        showToast('Backup imported successfully!', 'success');
+                    } else {
+                        showToast('Invalid backup file structure', 'error');
+                    }
+                } catch (err) {
+                    showToast('Failed to parse backup file', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportToCSV() {
+            let csvRows = [];
+            csvRows.push(['Date', 'Admission No', 'Student Name', 'Class', 'Category', 'Status', 'Amount (Rs)', 'Notes'].join(','));
+
+            state.entries.forEach(e => {
+                const student = state.students.find(s => s.id === e.studentId) || { name: 'Unknown', admNo: 'N/A', className: 'N/A' };
+                const category = state.categories.find(c => c.id === e.categoryId) || { name: 'General' };
+                
+                const row = [
+                    `"${e.date}"`,
+                    `"${student.admNo}"`,
+                    `"${student.name.replace(/"/g, '""')}"`,
+                    `"${student.className.replace(/"/g, '""')}"`,
+                    `"${category.name.replace(/"/g, '""')}"`,
+                    `"${e.status}"`,
+                    e.amount,
+                    `"${(e.notes || '').replace(/"/g, '""')}"`
+                ];
+                csvRows.push(row.join(','));
+            });
+
+            const csvString = csvRows.join('\n');
+            const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `Collection_Data_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('CSV downloaded for Google Sheets!', 'success');
+        }
+
+        // Direct Sync to Google Sheets via Web App API
+        async function syncToGoogleSheets() {
+            if (!state.googleSheetUrl) {
+                showToast('Google Apps Script URL നൽകാത്തതിനാൽ Settings തുറക്കുന്നു...', 'info');
+                openSettingsModal();
+                return;
+            }
+
+            showToast('Syncing to Google Sheet...', 'info');
+
+            const payload = state.entries.map(e => {
+                const student = state.students.find(s => s.id === e.studentId) || { name: 'Unknown', admNo: 'N/A', className: 'N/A' };
+                const category = state.categories.find(c => c.id === e.categoryId) || { name: 'General' };
+                return {
+                    date: e.date,
+                    admNo: student.admNo,
+                    studentName: student.name,
+                    className: student.className,
+                    category: category.name,
+                    status: e.status,
+                    amount: e.amount,
+                    notes: e.notes || ''
+                };
+            });
+
+            try {
+                await fetch(state.googleSheetUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ entries: payload, institution: state.institutionName })
+                });
+
+                showToast('Successfully synced with Google Sheet!', 'success');
+            } catch (err) {
+                console.error("Google Sheets sync error:", err);
+                showToast('Failed to sync. Check Web App URL.', 'error');
+            }
+        }
+
+        function copyAppsScriptCode() {
+            const scriptCode = `function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["Date", "Adm No", "Student Name", "Class", "Category", "Status", "Amount", "Notes"]);
+  }
+  
+  var entries = data.entries || [];
+  entries.forEach(function(row) {
+    sheet.appendRow([row.date, row.admNo, row.studentName, row.className, row.category, row.status, row.amount, row.notes]);
+  });
+  
+  return ContentService.createTextOutput(JSON.stringify({result: "success"}))
+    .setMimeType(ContentService.MimeType.JSON);
+}`;
+            navigator.clipboard.writeText(scriptCode);
+            showToast('Apps Script code copied to clipboard!', 'success');
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            const icon = document.getElementById('themeIcon');
+            if (isDark) {
+                icon.className = 'fa-solid fa-sun text-amber-400 text-lg';
+            } else {
+                icon.className = 'fa-solid fa-moon text-lg';
+            }
+            if (chartInstance) renderCategoryChart();
+        }
+
+        function updateHeaderDisplay() {
+            const instEl = document.getElementById('headerInstName');
+            const userEl = document.getElementById('headerUserName');
+            instEl.innerText = state.institutionName || 'Collection Registry';
+            userEl.innerText = state.userName ? `Managed by: ${state.userName}` : 'Fee & Income Management';
+        }
+
+        function openSettingsModal() {
+            document.getElementById('instNameInput').value = state.institutionName || '';
+            document.getElementById('userNameInput').value = state.userName || '';
+            document.getElementById('googleSheetScriptUrl').value = state.googleSheetUrl || '';
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function saveSettings(e) {
+            e.preventDefault();
+            state.institutionName = document.getElementById('instNameInput').value.trim();
+            state.userName = document.getElementById('userNameInput').value.trim();
+            state.googleSheetUrl = document.getElementById('googleSheetScriptUrl').value.trim();
+
+            saveToLocalStorage();
+            updateHeaderDisplay();
+            closeSettingsModal();
+            showToast('Settings saved successfully!', 'success');
+        }
+
+        function switchTab(tabId) {
+            const tabs = ['dashboard', 'add-entry', 'students', 'categories', 'registry'];
+            tabs.forEach(t => {
+                const view = document.getElementById(`view-${t}`);
+                const nav = document.getElementById(`nav-${t}`);
+                if (view) view.classList.add('hidden');
+                if (nav) {
+                    nav.className = 'nav-item flex flex-col items-center py-1 px-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-all';
+                }
+            });
+
+            const targetView = document.getElementById(`view-${tabId}`);
+            const targetNav = document.getElementById(`nav-${tabId}`);
+            if (targetView) targetView.classList.remove('hidden');
+            if (targetNav) {
+                targetNav.className = 'nav-item flex flex-col items-center py-1 px-3 text-brand-600 dark:text-brand-400 font-bold transition-all';
+            }
+
+            if (tabId === 'dashboard') renderDashboard();
+            if (tabId === 'students') renderStudentsList();
+            if (tabId === 'categories') renderCategoriesList();
+            if (tabId === 'registry') renderRegistryList();
+        }
+
+        function populateDropdowns() {
+            const uniqueClasses = [...new Set(state.students.map(s => s.className))].sort();
+
+            const classSelect = document.getElementById('entryClassSelect');
+            classSelect.innerHTML = '<option value="">All Classes / Select Class...</option>' + 
+                uniqueClasses.map(c => `<option value="${c}">${c}</option>`).join('');
+
+            const filterClassSelect = document.getElementById('filterClass');
+            if (filterClassSelect) {
+                filterClassSelect.innerHTML = '<option value="ALL">All Classes</option>' + 
+                    uniqueClasses.map(c => `<option value="${c}">${c}</option>`).join('');
+            }
+
+            const catSelect = document.getElementById('entryCategoryId');
+            catSelect.innerHTML = '<option value="">-- Select Category --</option>' + 
+                state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+
+            const filterCatSelect = document.getElementById('filterCategory');
+            filterCatSelect.innerHTML = '<option value="ALL">All Categories</option>' + 
+                state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        function handleCategorySelectChange() {
+            const catId = document.getElementById('entryCategoryId').value;
+            const category = state.categories.find(c => c.id === catId);
+            if (category && category.defaultAmount) {
+                document.getElementById('entryAmount').value = category.defaultAmount;
+            }
+        }
+
+        function filterStudentSuggestions() {
+            const currentAdm = document.getElementById('entryAdmNo').value;
+            if (currentAdm) searchStudents('admNo');
+        }
+
+        function searchStudents(triggerType) {
+            const selectedClass = document.getElementById('entryClassSelect').value;
+            const admVal = document.getElementById('entryAdmNo').value.toLowerCase().trim();
+            const nameVal = document.getElementById('entryStudentName').value.toLowerCase().trim();
+            const resultsBox = document.getElementById('studentSearchResults');
+
+            let matches = state.students.filter(s => {
+                const matchClass = !selectedClass || s.className === selectedClass;
+                const matchAdm = !admVal || s.admNo.toLowerCase().includes(admVal);
+                const matchName = !nameVal || s.name.toLowerCase().includes(nameVal);
+                return matchClass && matchAdm && matchName;
+            });
+
+            if (matches.length === 0) {
+                resultsBox.innerHTML = `<div class="p-3 text-xs text-slate-400 text-center">No matching students found</div>`;
+                resultsBox.classList.remove('hidden');
+                return;
+            }
+
+            resultsBox.innerHTML = matches.slice(0, 8).map(s => `
+                <div onclick="selectStudent('${s.id}')" class="p-3 hover:bg-slate-50 dark:hover:bg-slate-700/60 cursor-pointer flex justify-between items-center text-xs">
+                    <div>
+                        <span class="font-bold text-slate-800 dark:text-slate-100 block">${s.name}</span>
+                        <span class="text-slate-400">Class: ${s.className}</span>
+                    </div>
+                    <span class="font-mono bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300 px-2 py-0.5 rounded font-bold">${s.admNo}</span>
+                </div>
+            `).join('');
+            resultsBox.classList.remove('hidden');
+        }
+
+        function selectStudent(studentId) {
+            const student = state.students.find(s => s.id === studentId);
+            if (!student) return;
+
+            document.getElementById('entryStudentId').value = student.id;
+            document.getElementById('entryStudentName').value = student.name;
+            document.getElementById('entryAdmNo').value = student.admNo;
+            document.getElementById('entryClassSelect').value = student.className;
+            document.getElementById('studentSearchResults').classList.add('hidden');
+        }
+
+        function handleSaveEntry(e) {
+            e.preventDefault();
+            const editId = document.getElementById('entryEditId').value;
+            let studentId = document.getElementById('entryStudentId').value;
+            const categoryId = document.getElementById('entryCategoryId').value;
+            const paymentMethod = document.getElementById('entryPaymentMethod').value;
+            const amount = parseFloat(document.getElementById('entryAmount').value);
+            const date = document.getElementById('entryDate').value;
+            const notes = document.getElementById('entryNotes').value.trim();
+
+            if (!studentId) {
+                const admVal = document.getElementById('entryAdmNo').value.trim();
+                const nameVal = document.getElementById('entryStudentName').value.trim();
+                const matched = state.students.find(s => s.admNo === admVal || s.name.toLowerCase() === nameVal.toLowerCase());
+                
+                if (matched) {
+                    studentId = matched.id;
+                } else if (nameVal && admVal) {
+                    const newStudent = {
+                        id: 'st-' + Date.now(),
+                        name: nameVal,
+                        admNo: admVal,
+                        className: document.getElementById('entryClassSelect').value || 'Unassigned'
+                    };
+                    state.students.push(newStudent);
+                    studentId = newStudent.id;
+                    populateDropdowns();
+                } else {
+                    showToast('Please select or specify a valid student', 'error');
+                    return;
+                }
+            }
+
+            if (editId) {
+                const idx = state.entries.findIndex(en => en.id === editId);
+                if (idx !== -1) {
+                    state.entries[idx] = { id: editId, studentId, categoryId, amount, status: paymentMethod, date, notes };
+                    showToast('Entry updated successfully', 'success');
+                }
+            } else {
+                const newEntry = {
+                    id: 'en-' + Date.now(),
+                    studentId,
+                    categoryId,
+                    amount,
+                    status: paymentMethod,
+                    date,
+                    notes
+                };
+                state.entries.unshift(newEntry);
+                showToast('Collection entry recorded!', 'success');
+            }
+
+            saveToLocalStorage();
+            resetEntryForm();
+            switchTab('dashboard');
+        }
+
+        function editEntry(entryId) {
+            const entry = state.entries.find(e => e.id === entryId);
+            if (!entry) return;
+
+            const student = state.students.find(s => s.id === entry.studentId);
+            document.getElementById('entryEditId').value = entry.id;
+            document.getElementById('entryStudentId').value = entry.studentId;
+            if (student) {
+                document.getElementById('entryStudentName').value = student.name;
+                document.getElementById('entryAdmNo').value = student.admNo;
+                document.getElementById('entryClassSelect').value = student.className;
+            }
+            document.getElementById('entryCategoryId').value = entry.categoryId;
+            document.getElementById('entryPaymentMethod').value = entry.status;
+            document.getElementById('entryAmount').value = entry.amount;
+            document.getElementById('entryDate').value = entry.date;
+            document.getElementById('entryNotes').value = entry.notes || '';
+
+            document.getElementById('entryFormHeading').innerText = 'Edit Collection Entry';
+            switchTab('add-entry');
+        }
+
+        function cancelEntryEdit() {
+            resetEntryForm();
+            switchTab('dashboard');
+        }
+
+        function resetEntryForm() {
+            document.getElementById('entryEditId').value = '';
+            document.getElementById('entryStudentId').value = '';
+            document.getElementById('entryStudentName').value = '';
+            document.getElementById('entryAdmNo').value = '';
+            document.getElementById('entryCategoryId').value = '';
+            document.getElementById('entryAmount').value = '';
+            document.getElementById('entryNotes').value = '';
+            document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('entryFormHeading').innerText = 'New Collection Entry';
+        }
+
+        function deleteEntry(entryId) {
+            openConfirmModal('Delete Entry', 'Are you sure you want to delete this payment record?', function() {
+                state.entries = state.entries.filter(e => e.id !== entryId);
+                saveToLocalStorage();
+                renderDashboard();
+                renderRegistryList();
+                showToast('Entry deleted', 'info');
+            });
+        }
+
+        function renderDashboard() {
+            let totalPool = 0;
+            let cashTotal = 0;
+            let onlineTotal = 0;
+            let notPaidTotal = 0;
+
+            state.entries.forEach(e => {
+                if (e.status === 'Cash') {
+                    cashTotal += e.amount;
+                    totalPool += e.amount;
+                } else if (e.status === 'Online') {
+                    onlineTotal += e.amount;
+                    totalPool += e.amount;
+                } else if (e.status === 'Not Paid') {
+                    notPaidTotal += e.amount;
+                }
+            });
+
+            document.getElementById('dashTotalPool').innerText = `₹${totalPool.toLocaleString('en-IN')}`;
+            document.getElementById('dashCashTotal').innerText = `₹${cashTotal.toLocaleString('en-IN')}`;
+            document.getElementById('dashOnlineTotal').innerText = `₹${onlineTotal.toLocaleString('en-IN')}`;
+            document.getElementById('dashNotPaidTotal').innerText = `₹${notPaidTotal.toLocaleString('en-IN')}`;
+            document.getElementById('dashTotalEntriesCount').innerText = `${state.entries.length} Total Entries Recorded`;
+
+            renderCategoryChart();
+            renderCategoryBreakdownList();
+            renderRecentEntries();
+        }
+
+        function renderCategoryChart() {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            const categorySums = {};
+
+            state.categories.forEach(c => categorySums[c.name] = 0);
+            state.entries.forEach(e => {
+                const cat = state.categories.find(c => c.id === e.categoryId);
+                if (cat && e.status !== 'Not Paid') {
+                    categorySums[cat.name] = (categorySums[cat.name] || 0) + e.amount;
+                }
+            });
+
+            const labels = Object.keys(categorySums);
+            const data = Object.values(categorySums);
+            const isDark = document.documentElement.classList.contains('dark');
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: [
+                            '#6366f1', '#a855f7', '#ec4899', '#10b981', '#f59e0b', '#3b82f6'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: isDark ? '#cbd5e1' : '#475569',
+                                font: { size: 11, family: 'Plus Jakarta Sans' }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        function renderCategoryBreakdownList() {
+            const container = document.getElementById('dashCategoryBreakdownList');
+            const categorySums = {};
+
+            state.categories.forEach(c => categorySums[c.id] = { name: c.name, cash: 0, online: 0, notPaid: 0, total: 0, count: 0 });
+            
+            state.entries.forEach(e => {
+                if (categorySums[e.categoryId]) {
+                    if (e.status === 'Cash') {
+                        categorySums[e.categoryId].cash += e.amount;
+                        categorySums[e.categoryId].total += e.amount;
+                    } else if (e.status === 'Online') {
+                        categorySums[e.categoryId].online += e.amount;
+                        categorySums[e.categoryId].total += e.amount;
+                    } else if (e.status === 'Not Paid') {
+                        categorySums[e.categoryId].notPaid += e.amount;
+                    }
+                    categorySums[e.categoryId].count++;
+                }
+            });
+
+            container.innerHTML = Object.values(categorySums).map(item => `
+                <div class="py-2 space-y-1.5 text-xs">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-800 dark:text-slate-100 text-sm">${item.name}</span>
+                        <span class="font-extrabold text-slate-900 dark:text-white">₹${item.total.toLocaleString('en-IN')} Collected</span>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px]">
+                        <div class="flex items-center space-x-2">
+                            <span class="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-semibold px-2 py-0.5 rounded-lg">Cash: ₹${item.cash.toLocaleString('en-IN')}</span>
+                            <span class="bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-semibold px-2 py-0.5 rounded-lg">Online: ₹${item.online.toLocaleString('en-IN')}</span>
+                            <span class="bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 font-semibold px-2 py-0.5 rounded-lg">Not Paid: ₹${item.notPaid.toLocaleString('en-IN')}</span>
+                        </div>
+                        <span class="text-slate-400">${item.count} Entries</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderRecentEntries() {
+            const container = document.getElementById('dashRecentEntries');
+            const recents = state.entries.slice(0, 5);
+
+            if (recents.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No entries recorded yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = recents.map(e => {
+                const student = state.students.find(s => s.id === e.studentId) || { name: 'Unknown', admNo: 'N/A' };
+                const category = state.categories.find(c => c.id === e.categoryId) || { name: 'General' };
+                const badgeStyle = e.status === 'Cash' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                                   e.status === 'Online' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' :
+                                   'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400';
+
+                return `
+                    <div class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-700/40">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-9 h-9 rounded-xl bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold text-xs">
+                                ${student.name.charAt(0)}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-800 dark:text-white">${student.name} <span class="font-normal text-slate-400">(${student.admNo})</span></h4>
+                                <p class="text-[10px] text-slate-400">${category.name} • ${e.date}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="font-bold text-xs block text-slate-900 dark:text-white">₹${e.amount}</span>
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${badgeStyle}">${e.status}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderStudentsList() {
+            const searchVal = document.getElementById('searchStudentInput').value.toLowerCase().trim();
+            const tbody = document.getElementById('studentsTableBody');
+
+            const filtered = state.students.filter(s => 
+                s.name.toLowerCase().includes(searchVal) ||
+                s.admNo.toLowerCase().includes(searchVal) ||
+                s.className.toLowerCase().includes(searchVal)
+            );
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" class="py-6 text-center text-xs text-slate-400">No students found</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(s => `
+                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                    <td class="py-3 px-4">
+                        <span class="font-bold text-slate-900 dark:text-white block text-sm">${s.name}</span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="font-mono text-xs font-semibold text-brand-600 dark:text-brand-400 block">${s.admNo}</span>
+                        <span class="text-xs text-slate-400">${s.className}</span>
+                    </td>
+                    <td class="py-3 px-4 text-right space-x-1">
+                        <button onclick="openEditStudentModal('${s.id}')" class="p-2 text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 rounded-lg">
+                            <i class="fa-solid fa-pen text-xs"></i>
+                        </button>
+                        <button onclick="deleteStudent('${s.id}')" class="p-2 text-slate-400 hover:text-rose-600 rounded-lg">
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openAddStudentModal() {
+            document.getElementById('studentEditId').value = '';
+            document.getElementById('studentNameInput').value = '';
+            document.getElementById('studentAdmInput').value = '';
+            document.getElementById('studentClassInput').value = '';
+            document.getElementById('studentModalTitle').innerText = 'Add New Student';
+            document.getElementById('studentModal').classList.remove('hidden');
+        }
+
+        function openEditStudentModal(studentId) {
+            const student = state.students.find(s => s.id === studentId);
+            if (!student) return;
+
+            document.getElementById('studentEditId').value = student.id;
+            document.getElementById('studentNameInput').value = student.name;
+            document.getElementById('studentAdmInput').value = student.admNo;
+            document.getElementById('studentClassInput').value = student.className;
+            document.getElementById('studentModalTitle').innerText = 'Edit Student';
+            document.getElementById('studentModal').classList.remove('hidden');
+        }
+
+        function closeStudentModal() {
+            document.getElementById('studentModal').classList.add('hidden');
+        }
+
+        function saveStudent(e) {
+            e.preventDefault();
+            const editId = document.getElementById('studentEditId').value;
+            const name = document.getElementById('studentNameInput').value.trim();
+            const admNo = document.getElementById('studentAdmInput').value.trim();
+            const className = document.getElementById('studentClassInput').value.trim();
+
+            if (editId) {
+                const idx = state.students.findIndex(s => s.id === editId);
+                if (idx !== -1) {
+                    state.students[idx] = { id: editId, name, admNo, className };
+                    showToast('Student updated', 'success');
+                }
+            } else {
+                state.students.push({
+                    id: 'st-' + Date.now(),
+                    name,
+                    admNo,
+                    className
+                });
+                showToast('New student added', 'success');
+            }
+
+            saveToLocalStorage();
+            populateDropdowns();
+            renderStudentsList();
+            closeStudentModal();
+        }
+
+        function deleteStudent(studentId) {
+            openConfirmModal('Delete Student', 'This will remove the student from the directory.', function() {
+                state.students = state.students.filter(s => s.id !== studentId);
+                saveToLocalStorage();
+                populateDropdowns();
+                renderStudentsList();
+                showToast('Student deleted', 'info');
+            });
+        }
+
+        function openBulkStudentModal() {
+            document.getElementById('bulkDataInput').value = '';
+            document.getElementById('bulkStudentModal').classList.remove('hidden');
+        }
+
+        function closeBulkStudentModal() {
+            document.getElementById('bulkStudentModal').classList.add('hidden');
+        }
+
+        function processBulkStudents() {
+            const raw = document.getElementById('bulkDataInput').value.trim();
+            if (!raw) {
+                showToast('Please paste valid student data', 'error');
+                return;
+            }
+
+            const lines = raw.split('\n');
+            let addedCount = 0;
+
+            lines.forEach(line => {
+                line = line.trim();
+                if (!line) return;
+
+                let admNo = '', name = '', className = '';
+
+                if (line.includes(',')) {
+                    const parts = line.split(',').map(p => p.trim());
+                    admNo = parts[0] || '';
+                    name = parts[1] || '';
+                    className = parts[2] || 'General';
+                } else if (line.includes('\t')) {
+                    const parts = line.split('\t').map(p => p.trim());
+                    admNo = parts[0] || '';
+                    name = parts[1] || '';
+                    className = parts[2] || 'General';
+                } else {
+                    const parts = line.split(/\s+/);
+                    if (parts.length >= 2) {
+                        admNo = parts[0];
+                        if (parts.length === 2) {
+                            name = parts[1];
+                            className = 'General';
+                        } else if (parts.length === 3) {
+                            name = parts[1];
+                            className = parts[2];
+                        } else {
+                            if (['class', 'std', 'grade', 'sec', 'div'].includes(parts[parts.length - 2].toLowerCase())) {
+                                className = parts.slice(-2).join(' ');
+                                name = parts.slice(1, -2).join(' ');
+                            } else {
+                                className = parts[parts.length - 1];
+                                name = parts.slice(1, -1).join(' ');
+                            }
+                        }
+                    }
+                }
+
+                if (admNo && name) {
+                    state.students.push({
+                        id: 'st-' + Date.now() + Math.random().toString(36).substr(2, 4),
+                        name,
+                        admNo,
+                        className
+                    });
+                    addedCount++;
+                }
+            });
+
+            saveToLocalStorage();
+            populateDropdowns();
+            renderStudentsList();
+            closeBulkStudentModal();
+            showToast(`Successfully imported ${addedCount} students!`, 'success');
+        }
+
+        function renderCategoriesList() {
+            const grid = document.getElementById('categoriesGrid');
+
+            grid.innerHTML = state.categories.map(c => {
+                let cash = 0, online = 0, notPaid = 0, total = 0;
+                state.entries.filter(e => e.categoryId === c.id).forEach(e => {
+                    if (e.status === 'Cash') { cash += e.amount; total += e.amount; }
+                    else if (e.status === 'Online') { online += e.amount; total += e.amount; }
+                    else if (e.status === 'Not Paid') { notPaid += e.amount; }
+                });
+
+                return `
+                    <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-100 dark:border-slate-700/60 shadow-sm flex flex-col justify-between space-y-4">
+                        <div>
+                            <div class="flex items-start justify-between mb-3">
+                                <div class="flex items-center space-x-3">
+                                    <span class="w-10 h-10 rounded-2xl bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center text-lg">
+                                        <i class="fa-solid fa-tags"></i>
+                                    </span>
+                                    <div>
+                                        <h3 class="font-bold text-slate-900 dark:text-white text-base">${c.name}</h3>
+                                        <p class="text-xs text-slate-400">Default: ₹${c.defaultAmount || 0}</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-1">
+                                    <button onclick="openEditCategoryModal('${c.id}')" class="p-2 text-slate-400 hover:text-brand-600 rounded-lg">
+                                        <i class="fa-solid fa-pen text-xs"></i>
+                                    </button>
+                                    <button onclick="deleteCategory('${c.id}')" class="p-2 text-slate-400 hover:text-rose-600 rounded-lg">
+                                        <i class="fa-solid fa-trash text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-1.5 pt-2 border-t border-slate-100 dark:border-slate-700/60 text-center text-[10px]">
+                                <div class="p-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">
+                                    <span class="block font-medium">Cash</span>
+                                    <span class="font-bold">₹${cash}</span>
+                                </div>
+                                <div class="p-1.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
+                                    <span class="block font-medium">Online</span>
+                                    <span class="font-bold">₹${online}</span>
+                                </div>
+                                <div class="p-1.5 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">
+                                    <span class="block font-medium">Not Paid</span>
+                                    <span class="font-bold">₹${notPaid}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openCategoryModal() {
+            document.getElementById('categoryEditId').value = '';
+            document.getElementById('categoryNameInput').value = '';
+            document.getElementById('categoryAmountInput').value = '';
+            document.getElementById('categoryModalTitle').innerText = 'Add Fee Category';
+            document.getElementById('categoryModal').classList.remove('hidden');
+        }
+
+        function openEditCategoryModal(catId) {
+            const cat = state.categories.find(c => c.id === catId);
+            if (!cat) return;
+
+            document.getElementById('categoryEditId').value = cat.id;
+            document.getElementById('categoryNameInput').value = cat.name;
+            document.getElementById('categoryAmountInput').value = cat.defaultAmount || 0;
+            document.getElementById('categoryModalTitle').innerText = 'Edit Category';
+            document.getElementById('categoryModal').classList.remove('hidden');
+        }
+
+        function closeCategoryModal() {
+            document.getElementById('categoryModal').classList.add('hidden');
+        }
+
+        function saveCategory(e) {
+            e.preventDefault();
+            const editId = document.getElementById('categoryEditId').value;
+            const name = document.getElementById('categoryNameInput').value.trim();
+            const defaultAmount = parseFloat(document.getElementById('categoryAmountInput').value) || 0;
+
+            if (editId) {
+                const idx = state.categories.findIndex(c => c.id === editId);
+                if (idx !== -1) {
+                    state.categories[idx] = { id: editId, name, defaultAmount };
+                    showToast('Category updated', 'success');
+                }
+            } else {
+                state.categories.push({
+                    id: 'cat-' + Date.now(),
+                    name,
+                    defaultAmount
+                });
+                showToast('Category created', 'success');
+            }
+
+            saveToLocalStorage();
+            populateDropdowns();
+            renderCategoriesList();
+            closeCategoryModal();
+        }
+
+        function deleteCategory(catId) {
+            openConfirmModal('Delete Category', 'Deleting this category will affect future entry dropdowns.', function() {
+                state.categories = state.categories.filter(c => c.id !== catId);
+                saveToLocalStorage();
+                populateDropdowns();
+                renderCategoriesList();
+                showToast('Category deleted', 'info');
+            });
+        }
+
+        function renderRegistryList() {
+            const fromDate = document.getElementById('filterFromDate').value;
+            const toDate = document.getElementById('filterToDate').value;
+            const classFilter = document.getElementById('filterClass') ? document.getElementById('filterClass').value : 'ALL';
+            const catFilter = document.getElementById('filterCategory').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+            const container = document.getElementById('registryList');
+
+            const filtered = state.entries.filter(e => {
+                const student = state.students.find(s => s.id === e.studentId) || {};
+                const matchDate = (!fromDate || e.date >= fromDate) && (!toDate || e.date <= toDate);
+                const matchClass = classFilter === 'ALL' || student.className === classFilter;
+                const matchCat = catFilter === 'ALL' || e.categoryId === catFilter;
+                const matchStatus = statusFilter === 'ALL' || e.status === statusFilter;
+                return matchDate && matchClass && matchCat && matchStatus;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<div class="p-8 text-center text-xs text-slate-400">No collection entries found for selected criteria</div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(e => {
+                const student = state.students.find(s => s.id === e.studentId) || { name: 'Unknown', admNo: 'N/A', className: 'N/A' };
+                const category = state.categories.find(c => c.id === e.categoryId) || { name: 'General Fee' };
+                const badgeStyle = e.status === 'Cash' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                                   e.status === 'Online' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' :
+                                   'bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400';
+
+                return `
+                    <div class="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-10 h-10 rounded-2xl bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-300 flex items-center justify-center font-bold text-sm">
+                                ${student.name.charAt(0)}
+                            </div>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <h4 class="font-bold text-sm text-slate-900 dark:text-white">${student.name}</h4>
+                                    <span class="font-mono text-[10px] bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded">${student.admNo}</span>
+                                </div>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">${category.name} • ${student.className}</p>
+                                ${e.notes ? `<p class="text-[10px] text-slate-400 italic mt-0.5"><i class="fa-solid fa-note-sticky mr-1"></i>${e.notes}</p>` : ''}
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between sm:justify-end space-x-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-700/40">
+                            <div class="text-left sm:text-right">
+                                <span class="font-extrabold text-sm block text-slate-900 dark:text-white">₹${e.amount}</span>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${badgeStyle}">${e.status}</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <button onclick="viewReceipt('${e.id}')" title="View Receipt" class="p-2 text-slate-400 hover:text-brand-600 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700">
+                                    <i class="fa-solid fa-receipt text-sm"></i>
+                                </button>
+                                <button onclick="editEntry('${e.id}')" title="Edit Entry" class="p-2 text-slate-400 hover:text-brand-600 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700">
+                                    <i class="fa-solid fa-pen text-sm"></i>
+                                </button>
+                                <button onclick="deleteEntry('${e.id}')" title="Delete Entry" class="p-2 text-slate-400 hover:text-rose-600 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700">
+                                    <i class="fa-solid fa-trash text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function viewReceipt(entryId) {
+            const entry = state.entries.find(e => e.id === entryId);
+            if (!entry) return;
+
+            const student = state.students.find(s => s.id === entry.studentId) || { name: 'N/A', admNo: 'N/A', className: 'N/A' };
+            const category = state.categories.find(c => c.id === entry.categoryId) || { name: 'General Fee' };
+
+            const content = document.getElementById('receiptContent');
+            content.innerHTML = `
+                <div class="text-center pb-3 border-b border-slate-200 dark:border-slate-700">
+                    <h3 class="font-bold text-base text-slate-900 dark:text-white">${state.institutionName || 'Collection Registry'}</h3>
+                    <p class="text-xs text-slate-400">Official Payment Receipt</p>
+                </div>
+                <div class="space-y-2 text-xs">
+                    <div class="flex justify-between"><span class="text-slate-400">Receipt No:</span><span class="font-mono font-bold">${entry.id.toUpperCase()}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Date:</span><span class="font-semibold">${entry.date}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Student Name:</span><span class="font-bold">${student.name}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Admission No:</span><span class="font-mono">${student.admNo}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Class:</span><span>${student.className}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Category:</span><span>${category.name}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">Payment Status:</span><span class="font-bold text-brand-600 dark:text-brand-400">${entry.status}</span></div>
+                    <div class="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                        <span class="font-bold text-sm">Total Paid:</span>
+                        <span class="text-lg font-extrabold text-slate-900 dark:text-white">₹${entry.amount}</span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('receiptModal').classList.remove('hidden');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receiptModal').classList.add('hidden');
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const fromDate = document.getElementById('filterFromDate').value;
+            const toDate = document.getElementById('filterToDate').value;
+            const classFilter = document.getElementById('filterClass') ? document.getElementById('filterClass').value : 'ALL';
+            const catFilter = document.getElementById('filterCategory').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+
+            const filtered = state.entries.filter(e => {
+                const student = state.students.find(s => s.id === e.studentId) || {};
+                const matchDate = (!fromDate || e.date >= fromDate) && (!toDate || e.date <= toDate);
+                const matchClass = classFilter === 'ALL' || student.className === classFilter;
+                const matchCat = catFilter === 'ALL' || e.categoryId === catFilter;
+                const matchStatus = statusFilter === 'ALL' || e.status === statusFilter;
+                return matchDate && matchClass && matchCat && matchStatus;
+            });
+
+            doc.setFontSize(16);
+            doc.text(state.institutionName || 'Collection Registry', 14, 18);
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            const classSub = classFilter !== 'ALL' ? ` | Class: ${classFilter}` : '';
+            doc.text(`Fee Collection Report (${fromDate || 'Start'} to ${toDate || 'End'}${classSub})`, 14, 24);
+
+            let totalCollected = 0;
+            const tableRows = filtered.map((e, index) => {
+                const student = state.students.find(s => s.id === e.studentId) || { name: 'Unknown', admNo: 'N/A', className: 'N/A' };
+                const category = state.categories.find(c => c.id === e.categoryId) || { name: 'General' };
+                if (e.status !== 'Not Paid') totalCollected += e.amount;
+
+                return [
+                    index + 1,
+                    e.date,
+                    student.admNo,
+                    student.name,
+                    student.className,
+                    category.name,
+                    e.status,
+                    `Rs. ${e.amount}`
+                ];
+            });
+
+            doc.autoTable({
+                startY: 30,
+                head: [['#', 'Date', 'Adm No', 'Student Name', 'Class', 'Category', 'Status', 'Amount']],
+                body: tableRows,
+                headStyles: { fillColor: [79, 70, 229] },
+                alternateRowStyles: { fillColor: [245, 247, 250] },
+                styles: { fontSize: 8 }
+            });
+
+            let finalY = doc.lastAutoTable.finalY + 10;
+
+            const catSummaryMap = {};
+            let grandCash = 0, grandOnline = 0, grandNotPaid = 0, grandCollected = 0;
+
+            filtered.forEach(e => {
+                const category = state.categories.find(c => c.id === e.categoryId) || { name: 'General' };
+                if (!catSummaryMap[category.name]) {
+                    catSummaryMap[category.name] = { cash: 0, online: 0, notPaid: 0, total: 0 };
+                }
+                if (e.status === 'Cash') {
+                    catSummaryMap[category.name].cash += e.amount;
+                    catSummaryMap[category.name].total += e.amount;
+                    grandCash += e.amount;
+                    grandCollected += e.amount;
+                } else if (e.status === 'Online') {
+                    catSummaryMap[category.name].online += e.amount;
+                    catSummaryMap[category.name].total += e.amount;
+                    grandOnline += e.amount;
+                    grandCollected += e.amount;
+                } else if (e.status === 'Not Paid') {
+                    catSummaryMap[category.name].notPaid += e.amount;
+                    grandNotPaid += e.amount;
+                }
+            });
+
+            const summaryRows = Object.keys(catSummaryMap).map(catName => {
+                const item = catSummaryMap[catName];
+                return [
+                    catName,
+                    `Rs. ${item.cash.toLocaleString('en-IN')}`,
+                    `Rs. ${item.online.toLocaleString('en-IN')}`,
+                    `Rs. ${item.notPaid.toLocaleString('en-IN')}`,
+                    `Rs. ${item.total.toLocaleString('en-IN')}`
+                ];
+            });
+
+            summaryRows.push([
+                'GRAND TOTAL',
+                `Rs. ${grandCash.toLocaleString('en-IN')}`,
+                `Rs. ${grandOnline.toLocaleString('en-IN')}`,
+                `Rs. ${grandNotPaid.toLocaleString('en-IN')}`,
+                `Rs. ${grandCollected.toLocaleString('en-IN')}`
+            ]);
+
+            doc.setFontSize(11);
+            doc.setTextColor(0);
+            doc.text("Category Breakdown Summary (Cash, Online & Pending)", 14, finalY);
+
+            doc.autoTable({
+                startY: finalY + 4,
+                head: [['Category Title', 'Total Cash', 'Total Online', 'Not Paid (Pending)', 'Total Collected']],
+                body: summaryRows,
+                headStyles: { fillColor: [16, 185, 129] },
+                alternateRowStyles: { fillColor: [240, 253, 244] },
+                styles: { fontSize: 8, fontStyle: 'normal' },
+                didParseCell: function (data) {
+                    if (data.row.index === summaryRows.length - 1) {
+                        data.cell.styles.fontStyle = 'bold';
+                        data.cell.styles.fillColor = [220, 252, 231];
+                    }
+                }
+            });
+
+            doc.save(`Collection_Report_${new Date().toISOString().split('T')[0]}.pdf`);
+            showToast('PDF report generated successfully!', 'success');
+        }
+
+        function openConfirmModal(title, message, onConfirm) {
+            document.getElementById('confirmTitle').innerText = title;
+            document.getElementById('confirmMessage').innerText = message;
+            document.getElementById('confirmModal').classList.remove('hidden');
+
+            const cancelBtn = document.getElementById('confirmCancelBtn');
+            const okBtn = document.getElementById('confirmOkBtn');
+
+            const cleanup = () => {
+                document.getElementById('confirmModal').classList.add('hidden');
+                cancelBtn.onclick = null;
+                okBtn.onclick = null;
+            };
+
+            cancelBtn.onclick = cleanup;
+            okBtn.onclick = () => {
+                cleanup();
+                if (onConfirm) onConfirm();
+            };
+        }
+
+        function showToast(msg, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            const msgEl = document.getElementById('toastMsg');
+
+            msgEl.innerText = msg;
+            if (type === 'success') {
+                icon.className = 'fa-solid fa-circle-check text-emerald-400';
+            } else if (type === 'error') {
+                icon.className = 'fa-solid fa-circle-xmark text-rose-400';
+            } else {
+                icon.className = 'fa-solid fa-circle-info text-blue-400';
+            }
+
+            toast.classList.remove('-translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('-translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
+```
